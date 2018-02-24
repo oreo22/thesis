@@ -124,76 +124,19 @@ void ADC_Init_DC(uint32_t period){ //sequencer 0
   TIMER0_CTL_R |= 0x00000001;   // enable timer0A 32-b, periodic, no interrupts
 	
   ADC0_PC_R = 0x01;         // configure for 125K samples/sec
-  ADC0_SSPRI_R =0x1230;    // seq 0 highest with 3 being second highest;   0x3210 sequencer 0 is highest, sequencer 3 is lowest, //0x0123 has sequencer 3 is the highest with sequencer 0 being the lowest
-	ADC0_ACTSS_R &= ~0x01;  //disable seq 0 //~0x09;     //disable sample sequencer 0 and 3
-  ADC0_EMUX_R = (ADC0_EMUX_R&0xFFFFFFF0)+0x0005; // timer trigger event //ADC0_EMUX_R = (ADC0_EMUX_R&0xFFFF0FF0)+0x5005; // timer trigger event for sequencer 0 and 3 
+  ADC0_SSPRI_R =0x3210;    // sequencer 0 is highest, sequencer 3 is lowest, //0x0123 has sequencer 3 is the highest with sequencer 0 being the lowest
+	ADC0_ACTSS_R &= ~0x01;  //disable seq 0 
+  ADC0_EMUX_R = (ADC0_EMUX_R&0xFFFFFFF0)+0x0005;// timer trigger event for sequencer 0 
 	//ADC0_SAC_R = ADC_SAC_AVG_4X; // 4x hardware oversampling // ADC_SAC_AVG_2X; // 2x hardware oversampling  //  ADC0_SAC_R = ADC_SAC_AVG_2X;
 	ADC0_SSMUX0_R = 0x89;               //sample channels 8 and 9, diff pair 4
   ADC0_SSCTL0_R = 0x06;  // no TS0, yes IE0 END0, D0
 
 	ADC0_IM_R |=  0x01;  //enable SS0 and SS3 interrupts
 	ADC0_ACTSS_R |=0x01;  //enable sample sequencer 0 and 3
-	NVIC_PRI3_R = (NVIC_PRI3_R&0xFF00FFFF)|0x00400000; //priority 2 b/c priority 1 is 2, plaed in right bits
+	NVIC_PRI3_R = (NVIC_PRI3_R&0xFF00FFFF)|0x00200000; //priority 2 b/c priority 1 is 2, plaed in right bits
 	NVIC_EN0_R = 1<<14;
 }
 
-void ADC_Init_AC(uint32_t period){ //sequencer 3
-	volatile uint32_t delay;
-  // **** GPIO pin initialization 
-	
-	SYSCTL_RCGCGPIO_R |= SYSCTL_RCGCGPIO_R4; //    these are on GPIO_PORTE
-  delay = SYSCTL_RCGCGPIO_R;      // 2) allow time for clock to stabilize
-  delay = SYSCTL_RCGCGPIO_R;
-    //      Ain2 is on PE1
-      GPIO_PORTE_DIR_R &= ~0x02;  // 3.2) make PE1 input
-      GPIO_PORTE_AFSEL_R |= 0x02; // 4.2) enable alternate function on PE1
-      GPIO_PORTE_DEN_R &= ~0x02;  // 5.2) disable digital I/O on PE1
-      GPIO_PORTE_AMSEL_R |= 0x02; // 6.2) enable analog functionality on PE1
-    //      Ain3 is on PE0
-      GPIO_PORTE_DIR_R &= ~0x01;  // 3.3) make PE0 input
-      GPIO_PORTE_AFSEL_R |= 0x01; // 4.3) enable alternate function on PE0
-      GPIO_PORTE_DEN_R &= ~0x01;  // 5.3) disable digital I/O on PE0
-      GPIO_PORTE_AMSEL_R |= 0x01; // 6.3) enable analog functionality on PE0
-    //      Ain9 is on PE4
-      GPIO_PORTE_DIR_R &= ~0x10;  // 3.9) make PE4 input
-      GPIO_PORTE_AFSEL_R |= 0x10; // 4.9) enable alternate function on PE4
-      GPIO_PORTE_DEN_R &= ~0x10;  // 5.9) disable digital I/O on PE4
-      GPIO_PORTE_AMSEL_R |= 0x10; // 6.9) enable analog functionality on PE4
-		//      Ain8 is on PE5
-      GPIO_PORTE_DIR_R &= ~0x20;  // 3.8) make PE5 input
-      GPIO_PORTE_AFSEL_R |= 0x20; // 4.8) enable alternate function on PE5
-      GPIO_PORTE_DEN_R &= ~0x20;  // 5.8) disable digital I/O on PE5
-      GPIO_PORTE_AMSEL_R |= 0x20; // 6.8) enable analog functionality on PE5
-
-  DisableInterrupts();
-	SYSCTL_RCGCADC_R |= SYSCTL_RCGCTIMER_R1;     // activate ADC1 
-	SYSCTL_RCGCTIMER_R |= SYSCTL_RCGCTIMER_R1;   // activate timer1 
-	TIMER1_CTL_R = 0x00000000;    // 1) disable TIMER1A during setup
-	TIMER1_CTL_R |= 0x00000020;   // enable timer1A trigger to ADC
-  TIMER1_CFG_R =0;    // 2) configure for 32-bit mode
-  TIMER1_TAMR_R = 0x00000002;   // 3) configure for periodic mode, down-count 
-  TIMER1_TAILR_R = period-1;  // 4) reload value
-  TIMER1_TAPR_R = 0;            // 5) bus clock resolution
- // TIMER1_ICR_R = 0x00000001;    // 6) clear TIMER1A timeout flag
-  TIMER1_IMR_R = 0x00000000;    // 7) disarm timeout interrupt
-	TIMER1_CTL_R = 0x00000001;    // 10) enable TIMER1A
-	
-
-
-	ADC1_PC_R = 0x01;         // configure for 125K samples/sec
-  ADC1_SSPRI_R =0x1230;    // seq 0 highest with 3 being second highest;   0x3210 sequencer 0 is highest, sequencer 3 is lowest, //0x0123 has sequencer 3 is the highest with sequencer 0 being the lowest
-	ADC1_ACTSS_R &= ~0x01;  //disable seq 0 //~0x09;     //disable sample sequencer 0 and 3
-	ADC1_EMUX_R = (ADC1_EMUX_R&0xFFFFFFF0)+0x0005; // timer trigger event for sequencer 0 and 3 
-	ADC1_SAC_R = ADC_SAC_AVG_4X; // 4x hardware oversampling // ADC_SAC_AVG_2X; // 2x hardware oversampling  //  ADC0_SAC_R = ADC_SAC_AVG_2X;
-	ADC1_SSMUX0_R = 0x00239;        //sample channels 2,3,and  8 and 9
-  ADC1_SSCTL0_R = 0x06;  // no TS0 D0, yes IE0 
-
-	ADC1_IM_R |=  0x01;  //enable SS0 and SS3 interrupts
-	ADC1_ACTSS_R |=0x01;  //enable sample sequencer 0 
-	NVIC_PRI3_R = (NVIC_PRI3_R&0x0FFFFFFF)|0x80000000; //priority 1
-		//NVIC_PRI3_R = (NVIC_PRI3_R&0xFF00FFFF)|0x00400000;
-	NVIC_EN0_R = 1<<15;              // enable interrupt 15 in NVIC b/c IRQ is 15
-}
 
 volatile double ADCvalue[100];
 uint32_t ADCindex=0;
@@ -202,21 +145,17 @@ double inputValue;
 //float adcInput;
 
 void ADC0Seq0_Handler(void){ //used to sample a bunch of stuff
-	volatile uint32_t V0; //PE4
-	volatile uint32_t V1; //PE5
-	double inputCheck1; //PE2
-	double inputCheck2;
+	volatile uint32_t V0; //PE5, Ain8
+	volatile uint32_t V1; //PE4, Ain9
+	double inputCheck1; 
   ADC0_ISC_R = 0x01;   // acknowledge ADC sequence 0 completion
 	V0 = ADC0_SSFIFO0_R&0x0FFF;  // 3A) read third result
-	//V1 = ADC0_SSFIFO0_R&0x0FFF;  // 12-bit result //ADC0_SSFIFO3_R&0xFFF //channel 8, PE5
-//	data = (ADC0_SSFIFO0_R&0x0FFF);  // 3A) read first result   //channel 9, PE4
 	inputCheck1=(V0*3.3); //-1.65 //to get rid of the level shift
-//	inputCheck2=(V1*3.3);
 	inputCheck1=(inputCheck1)/4096;
-	//inputCheck2=inputCheck2/4096;
-	if(inputValue<3.3){
+	inputValue=inputCheck1;
+	/*if(inputValue<3.3){
 			inputValue=inputCheck1;
-	}
+	}*/
 		ADCvalue[ADCindex]=inputValue;
 		ADCindex= (ADCindex %100)+1; //once you fill the 100 samples, replace the oldest value 
 }

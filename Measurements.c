@@ -3,15 +3,13 @@
 #include "math.h"
 #define PD0  (*((volatile unsigned long *)0x40007004))
 extern double ADCvalue[100];
-double maxV=0;
-uint8_t maxVdone=0;
-
+extern double sFactor;
 double calculateV(void){
-	PD0=0x01;
 	double SCBscale = 1; //3.73333;  //5.6V input
 	double xfmrScale=1; //5; //120:24 step-down xfmr
 	double sum = 0;
 	double ui2 = 0;
+	double maxV=0;
 	for (int i = 0; i<100; i++){
 		ui2=ADCvalue[i] * ADCvalue[i];
 		sum = sum + ui2;
@@ -19,11 +17,10 @@ double calculateV(void){
 				maxV=ADCvalue[i];
 			}
 	}
-	maxVdone=1;
+	sFactor=maxV/3.3;
 	sum = sum /100;
 	sum = sqrt(sum);
 	sum=sum*SCBscale*xfmrScale;
-	PD0=0x00;
 	return sum;
 }
 

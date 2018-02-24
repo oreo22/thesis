@@ -30,7 +30,6 @@ void Init(void){
 	PWM0B2_Init(2000, 500); //25% duty cycle, change second number to % of first
 	PWM0A_Init(2000, 500); //1st number is frequency and 2nd # is duty cycle
 	ADC_Init_DC(13333); //800   1 kHz sampling, PE5, PE4, PE1, PE0  bus_freq/desired_freq
-	//ADC_Init_AC(13333); // 13333   6 kHz sampling, PE2 and PE3; bus_freq/desired_freq
 	EnableInterrupts();
 	condition =2;
 }
