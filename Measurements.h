@@ -1,4 +1,4 @@
-float calculateV(void);
+double calculateV(void);
 
 float calculateI(void);
 

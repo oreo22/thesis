@@ -1,40 +1,29 @@
 #include <stdint.h>
 #include "tm4c123gh6pm.h"
 #include "math.h"
-
+#define PD0  (*((volatile unsigned long *)0x40007004))
 extern double ADCvalue[100];
-uint32_t maxV=0;
+double maxV=0;
 uint8_t maxVdone=0;
 
-float calculateV(void){
-	double ADCcopy[100];
-	for (int i = 0; i<100; i++){ //create a local copy of the 
-		ADCcopy[i] = ADCvalue[i];
-		if (i>1 && (ADCcopy[i] > ADCvalue[i-1])  ){
-			maxV=ADCcopy[i];
-		}
+double calculateV(void){
+	PD0=0x01;
+	double SCBscale = 1; //3.73333;  //5.6V input
+	double xfmrScale=1; //5; //120:24 step-down xfmr
+	double sum = 0;
+	double ui2 = 0;
+	for (int i = 0; i<100; i++){
+		ui2=ADCvalue[i] * ADCvalue[i];
+		sum = sum + ui2;
+		if(ADCvalue[i]>maxV){
+				maxV=ADCvalue[i];
+			}
 	}
 	maxVdone=1;
-	float scaledV[100];
-	//float SCBscale = 2.66666;  //4V input
-	float SCBscale = 3.73333;  //5.6V input
-	//float xfmrScale=5; //120:24 step-down xfmr
-	
-/*	for (int i = 0; i<100; i++){
-		scaledV[i] = (ADCcopy[i] *3.3)/4096; //To get the non-level shifted value
-		//scaledV[i] = scaledV[i] - 1.65; 	 //Account for the level-shift by subtracting the offset 
-	}*/
-	
-	float sum = 0; //uint32_t?
-	float ui2 = 0;
-	for (int i = 0; i<100; i++){
-		ui2=scaledV[i] * scaledV[i];
-		sum = sum + ui2;
-	}
 	sum = sum /100;
 	sum = sqrt(sum);
-	sum = sum * SCBscale; //Scale up the voltage value by the SCB's reduction factor 
-	//sum	= sum* xfmrScale; //Scale up the voltage value by the step-down factor of the xfmr
+	sum=sum*SCBscale*xfmrScale;
+	PD0=0x00;
 	return sum;
 }
 

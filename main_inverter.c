@@ -29,13 +29,13 @@ void Init(void){
 	GPIO_Init();
 	PWM0B2_Init(2000, 500); //25% duty cycle, change second number to % of first
 	PWM0A_Init(2000, 500); //1st number is frequency and 2nd # is duty cycle
-	ADC_Init_DC(800); //800   1 kHz sampling, PE5, PE4, PE1, PE0  bus_freq/desired_freq
+	ADC_Init_DC(13333); //800   1 kHz sampling, PE5, PE4, PE1, PE0  bus_freq/desired_freq
 	//ADC_Init_AC(13333); // 13333   6 kHz sampling, PE2 and PE3; bus_freq/desired_freq
 	EnableInterrupts();
 	condition =2;
 }
 
-float invOutput=0;
+double invOutput=0;
 float dcVin=0;
 void chargeBat(void){
 	DisableInterrupts();
@@ -54,7 +54,7 @@ void dischargeBat(void){
 	SysTick_Init(1067);        // initialize SysTick timer, sawtooth has 25 pts, so to get a 30kHz signal, you have to interrupt 30kHz *25	
 	EnableInterrupts();
 	while(condition==2){
-	//	invOutput=calculateV(); //voltage level it should boost to
+		invOutput=calculateV(); //voltage level it should boost to
 		dcVin=12; //the input to the boost 
 	//	boostMode(invOutput,dcVin);
 	}

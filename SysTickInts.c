@@ -60,7 +60,7 @@ void SysTick_Init(uint32_t period){long sr; //sawtooth wave should be at 200kHz 
   EndCritical(sr);
 }
 
-float sFactor=1; //ma factor, since sawtooth is set to 3.3, it's unknown if the max of the incoming modulated sine wave is at 3.3. 
+float sFactor=0.715; //ma factor, since sawtooth is set to 3.3, it's unknown if the max of the incoming modulated sine wave is at 3.3. 
 //If the peak isn't, change the scaling factor of the sawtooth to the ratio of the maxIncomingSignal/3.3, so it's a percentage of the full. Modulate the whole sawtooth to 
 //(if incoming signal is greater than 3.3, ignore value), do this calculation elsewhere 
 
@@ -75,22 +75,20 @@ void SysTick_Handler(void){
 		/*if(maxVdone==1){
 			sFactor=maxV/3.3;
 		}*/
-	float temp=sawtooth[saw_index-1]; //*sFactor;
+	float temp=sawtooth[saw_index-1]*sFactor; //*sFactor;
 		if(inputValue >= temp) {
 		//	GPIO_PORTD_DATA_R =0x030; //PD2 on, PD3 on
 			PD2 = 0x04; 
 		}
-		if(inputValue < temp  ){ 
+	if(inputValue < temp  ){ 
 			PD2 = 0x00; 
 		}
 		if (inputNeg > temp){
 //			GPIO_PORTD_DATA_R =0x010;  //PD2 off, PD3 on
-			
-		PD3 = 0x08; 
+			PD3 = 0x08; 
 		}
 		if(inputNeg < temp){ //inputValue> (sawtooth[saw_index-1]*sFactor) && 
 			//GPIO_PORTD_DATA_R =0x020;  //PD2 on, PD3 off 
-		PD3 = 0x00; 
+			PD3 = 0x00; 
 		}
-		PD3 ^=0x08;
 }

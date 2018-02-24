@@ -41,7 +41,7 @@
                                             // Gating Control
 #define SYSCTL_RCGCGPIO_R1      0x00000002  // GPIO Port B Run Mode Clock
                                             // Gating Control
-
+#define PD2 (*((volatile uint32_t *)0x40007010 ))
 
 // There are many choices to make when using the ADC, and many
 // different combinations of settings will all do basically the
@@ -127,9 +127,9 @@ void ADC_Init_DC(uint32_t period){ //sequencer 0
   ADC0_SSPRI_R =0x1230;    // seq 0 highest with 3 being second highest;   0x3210 sequencer 0 is highest, sequencer 3 is lowest, //0x0123 has sequencer 3 is the highest with sequencer 0 being the lowest
 	ADC0_ACTSS_R &= ~0x01;  //disable seq 0 //~0x09;     //disable sample sequencer 0 and 3
   ADC0_EMUX_R = (ADC0_EMUX_R&0xFFFFFFF0)+0x0005; // timer trigger event //ADC0_EMUX_R = (ADC0_EMUX_R&0xFFFF0FF0)+0x5005; // timer trigger event for sequencer 0 and 3 
-	ADC0_SAC_R = ADC_SAC_AVG_4X; // 4x hardware oversampling // ADC_SAC_AVG_2X; // 2x hardware oversampling  //  ADC0_SAC_R = ADC_SAC_AVG_2X;
-	ADC0_SSMUX0_R = 0x0089;               //sample channels 2,3,and  8 and 9
-  ADC0_SSCTL0_R = 0x07;  // no TS0, yes IE0 END0, D0
+	//ADC0_SAC_R = ADC_SAC_AVG_4X; // 4x hardware oversampling // ADC_SAC_AVG_2X; // 2x hardware oversampling  //  ADC0_SAC_R = ADC_SAC_AVG_2X;
+	ADC0_SSMUX0_R = 0x89;               //sample channels 8 and 9, diff pair 4
+  ADC0_SSCTL0_R = 0x06;  // no TS0, yes IE0 END0, D0
 
 	ADC0_IM_R |=  0x01;  //enable SS0 and SS3 interrupts
 	ADC0_ACTSS_R |=0x01;  //enable sample sequencer 0 and 3
@@ -186,7 +186,7 @@ void ADC_Init_AC(uint32_t period){ //sequencer 3
 	ADC1_EMUX_R = (ADC1_EMUX_R&0xFFFFFFF0)+0x0005; // timer trigger event for sequencer 0 and 3 
 	ADC1_SAC_R = ADC_SAC_AVG_4X; // 4x hardware oversampling // ADC_SAC_AVG_2X; // 2x hardware oversampling  //  ADC0_SAC_R = ADC_SAC_AVG_2X;
 	ADC1_SSMUX0_R = 0x00239;        //sample channels 2,3,and  8 and 9
-  ADC1_SSCTL0_R = 0x07;  // no TS0 D0, yes IE0 
+  ADC1_SSCTL0_R = 0x06;  // no TS0 D0, yes IE0 
 
 	ADC1_IM_R |=  0x01;  //enable SS0 and SS3 interrupts
 	ADC1_ACTSS_R |=0x01;  //enable sample sequencer 0 
@@ -202,29 +202,23 @@ double inputValue;
 //float adcInput;
 
 void ADC0Seq0_Handler(void){ //used to sample a bunch of stuff
-	volatile uint32_t V0; //PE3
-	volatile uint32_t V1; //PE2
+	volatile uint32_t V0; //PE4
+	volatile uint32_t V1; //PE5
 	double inputCheck1; //PE2
 	double inputCheck2;
-  ADC0_ISC_R = 0x01;          // acknowledge ADC sequence 0 completion
-  V0 = ADC0_SSFIFO0_R&0x0FFF;  // 3A) read third result
-	V1 = ADC0_SSFIFO0_R&0x0FFF;  // 12-bit result //ADC0_SSFIFO3_R&0xFFF //channel 8, PE5
+  ADC0_ISC_R = 0x01;   // acknowledge ADC sequence 0 completion
+	V0 = ADC0_SSFIFO0_R&0x0FFF;  // 3A) read third result
+	//V1 = ADC0_SSFIFO0_R&0x0FFF;  // 12-bit result //ADC0_SSFIFO3_R&0xFFF //channel 8, PE5
 //	data = (ADC0_SSFIFO0_R&0x0FFF);  // 3A) read first result   //channel 9, PE4
 	inputCheck1=(V0*3.3); //-1.65 //to get rid of the level shift
-	inputCheck2=(V1*3.3);
-	
+//	inputCheck2=(V1*3.3);
 	inputCheck1=(inputCheck1)/4096;
-	inputCheck2=inputCheck2/4096;
-	inputCheck1=inputCheck1-inputCheck2;
-	if(inputCheck1<4){
-		inputValue=inputCheck1;
-		ADCvalue[ADCindex]=inputValue;
-		ADCindex= (ADCindex %100)+1;
+	//inputCheck2=inputCheck2/4096;
+	if(inputValue<3.3){
+			inputValue=inputCheck1;
 	}
-	//	PF3 |= 0x08; //green light
-	//PF3 |= 0x08; //green light
-  //GPIO_PORTD_DATA_R ^=0x04; // PD2 PWM at 3kHz
-	
+		ADCvalue[ADCindex]=inputValue;
+		ADCindex= (ADCindex %100)+1; //once you fill the 100 samples, replace the oldest value 
 }
 
 void ADC1Seq0_Handler(void){	
@@ -234,11 +228,5 @@ void ADC1Seq0_Handler(void){
   //GPIO_PORTD_DATA_R ^=0x04; // PD2 PWM at 3kHz
 
 }
-
-void Timer1A_Handler(void){
-	 TIMER1_ICR_R = TIMER_ICR_TATOCINT;// acknowledge TIMER1A timeout
-	PF3 |= 0x08; //green light
-}
-
 
 
